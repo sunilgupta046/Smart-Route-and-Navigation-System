@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather & Route Safety App</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div>
+
+
+  </div>
+
+  <header>
+    <h1>🌦 Weather & Route Safety</h1>
+    <p>Check live weather and plan safe routes with ease</p>
+  </header>
+
+  <main>
+    <form>
+      <input type="text" id="name" autocomplete="off" placeholder="Enter city name...">
+      <button type="submit" title="Search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+      <button type="button" id="voice-search" title="Speak city name">
+        <i class="fa-solid fa-microphone"></i>
+      </button>
+    </form>
+
+    <section class="result">
+      <figure class="name">
+        <figcaption>Ghaziabad</figcaption>
+        <img src="https://flagsapi.com/IN/shiny/32.png">
+      </figure>
+
+      <figure class="temperature">
+        <img src="https://openweathermap.org/img/wn/10d@4x.png">
+        <figcaption>
+          <span>28</span>
+          <sup>&deg;C</sup>
+        </figcaption>
+      </figure>
+      <div id="live-temp" style="margin-top:8px;font-weight:600;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.4);">
+      </div>
+
+      <p class="description">light rain</p>
+      <ul>
+        <li>
+          <i class="fa-solid fa-cloud"></i>
+          <span>clouds</span>
+          <span id="clouds">75</span>%
+        </li>
+        <li>
+          <i class="fa-solid fa-droplet"></i>
+          <span>humidity</span>
+          <span id="humidity">80</span>%
+        </li>
+        <li>
+          <i class="fa-solid fa-gauge"></i>
+          <span>pressure</span>
+          <span id="pressure">1005</span>hPa
+        </li>
+      </ul>
+      <p id="error-message" style="color:red; display:none; margin-top:10px;"></p>
+
+      <!-- Added: 5-day forecast display -->
+      <div id="forecast" class="forecast" style="display:flex;gap:8px;margin-top:px;"></div>
+
+      <!-- Added: Previous 5 days (historical) -->
+      <div id="past-forecast" class="forecast" style="display:flex;gap:8px;margin-top:10px;"></div>
+    </section>
+  </main>
+
+  <div id="map"></div>
+
+  <button>
+
+    <a href="https://www.aqi.in/" target="_blank" rel="noopener noreferrer">More AQI Info</a>
+  </button>
+
+  <!-- AQI Section -->
+  <div class="aqi-container">
+    <div class="aqi-card">
+      <h2>💨 Air Quality Index (AQI)</h2>
+      <div id="aqi-current" class="aqi-display">
+        <div id="aqi-level" style="font-size: 2em; font-weight: bold; margin: 10px 0;">-</div>
+        <div id="aqi-value" style="font-size: 1.5em; margin: 10px 0;">AQI: -</div>
+        <div id="aqi-main-pollutant" style="margin: 10px 0;">-</div>
+        <div id="aqi-health-alert" style="margin-top: 15px; padding: 10px; border-radius: 8px;"></div>
+      </div>
+      <!-- AQI Pie Chart (distribution over next forecasts) -->
+      <div style="margin-top:12px; text-align:center;">
+        <canvas id="aqi-pie" width="300" height="200"></canvas>
+        <div id="aqi-pie-legend" style="margin-top:8px; font-size:0.9em;"></div>
+      </div>
+      <!-- Air Pollution Awareness Tab -->
+      <div style="margin-top:16px;">
+        <div id="pollution-tabs"
+          style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;border-bottom:2px solid #ddd;padding-bottom:8px;">
+          <button class="pollution-tab-btn active" data-tab="problems"
+            style="padding:8px 12px;background:#5b89a6;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Problems</button>
+          <button class="pollution-tab-btn" data-tab="causes"
+            style="padding:8px 12px;background:#f0f0f0;color:#333;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Causes</button>
+          <button class="pollution-tab-btn" data-tab="precautions"
+            style="padding:8px 12px;background:#f0f0f0;color:#333;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Precautions</button>
+          <button class="pollution-tab-btn" data-tab="articles"
+            style="padding:8px 12px;background:#f0f0f0;color:#333;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Articles</button>
+          <button class="pollution-tab-btn" data-tab="alerts"
+            style="padding:8px 12px;background:#f0f0f0;color:#333;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Health
+            Alerts</button>
+        </div>
+        <div id="pollution-tab-content" style="padding:12px;background:#f9f9f9;border-radius:8px;min-height:200px;">
+          <!-- Content will be filled by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <div class="aqi-card">
+      <h3>🚗 Vehicle Recommendations</h3>
+      <div id="vehicle-recommendations" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="aqi-card">
+      <h3>🏠 Indoor Air Quality</h3>
+      <div id="indoor-aqi-display" style="margin-top: 10px;"></div>
+      <div id="purifier-suggestions" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="aqi-card">
+      <h3>📍 AQI Along Route</h3>
+      <div id="route-aqi-display" style="margin-top: 10px;"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <h2>🚗 Check Your Route</h2>
+    <p>Enter your start and end locations to see if it's raining along the way!</p>
+    <div class="input-group">
+      <input id="start" type="text" placeholder="Enter Start Location" />
+      <input id="end" type="text" placeholder="Enter Destination" />
+    </div class="controls">
+    <button id="route-button">Check Route Options</button>
+    <button type="button" id="use-my-location">Use My Location</button>
+
+    <div id="route-result"></div>
+
+    <!-- Added: Recent searches -->
+    <div id="search-history" style="margin-top:12px;">
+      <h3 style="margin:6px 0 8px 0;">Recent Searches</h3>
+      <ul id="history-list" style="list-style:none;padding:0;margin:0;display:flex;gap:6px;flex-wrap:wrap;"></ul>
+    </div>
+  </div>
+
+  <!-- Route details: tolls, CO2 and alternate-route savings -->
+  <div id="route-details" style="width:90%;max-width:1000px;margin:12px auto;">
+    <div id="toll-info"
+      style="padding:12px;background:rgba(255,255,255,0.9);border-radius:8px;margin-bottom:8px;display:none;"></div>
+    <div id="co2-info"
+      style="padding:12px;background:rgba(255,255,255,0.9);border-radius:8px;margin-bottom:8px;display:none;"></div>
+    <div id="alt-route-info" style="padding:12px;background:rgba(255,255,255,0.95);border-radius:8px;display:none;">
+    </div>
+  </div>
+
+  <footer>
+    <p>Weatherly by CodeSTorm </p>
+    
+    
+  </footer>
+
+  <!-- AI assistant bottom-right -->
+  <button id="ai-assistant-btn" title="Open AI Assistant">🤖</button>
+
+  <div id="ai-panel" role="dialog" aria-hidden="true">
+    <h3>AI Assistant</h3>
+    <div id="ai-messages" aria-live="polite"></div>
+    <div id="ai-input-section">
+      <input id="ai-input" placeholder="Try: 'weather in Pune', 'route to Noida'..." />
+      <button id="ai-mic" title="Voice"><i class="fa-solid fa-microphone"></i></button>
+      <button id="ai-send" title="Send"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Maps API - Replace 'YOUR_GOOGLE_MAPS_API_KEY' in main.js with your actual key -->
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places,directions,geometry"></script>
+  <script src="main.js"></script>
+</body>
+
+</html>
